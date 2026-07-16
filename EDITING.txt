@@ -1,0 +1,84 @@
+FORGE COACHING WEBSITE — ONE FOLDER, ONE SOURCE OF TRUTH
+=========================================================
+
+LOCATION (edit files here only):
+  /Users/ethancf55/Projects/forge-coaching
+
+LIVE SITE:
+  https://forgevirtualtraining.org
+  Hosted on: Vercel (project name: forge-coaching)
+
+NO DUPLICATE FOLDER ON YOUR MAC
+  This is the only copy. Netlify was old hosting — not a second folder.
+  If you still have a Netlify site online, delete it in netlify.com so
+  you are not paying for / maintaining two hosts.
+
+
+FILE MAP — what to edit
+-----------------------
+  index.html          Page content (text, sections, contact info)
+  css/styles.css      Colors, fonts, layout
+  js/main.js          Buttons, menu, contact form behavior
+  assets/images/      Put your photos here, then update index.html
+
+
+WORKFLOW — edit locally, publish to Vercel
+------------------------------------------
+  1. Open this folder in VS Code:
+       File → Open Folder → forge-coaching
+
+  2. Edit files and save.
+
+  3. Preview locally (optional):
+       Right-click index.html → Open with Live Server
+       OR in terminal: python3 -m http.server 8080
+       Then visit http://localhost:8080
+
+  4. Deploy to Vercel (pick one):
+       • VS Code: Vercel extension → Deploy
+       • Terminal: vercel --prod   (from this folder)
+
+  5. Wait ~30 seconds, then check https://forgevirtualtraining.org
+
+
+IMPORTANT — avoid duplicates
+----------------------------
+  • Do NOT copy this folder to Desktop/Downloads to "work on a copy"
+  • Always edit THIS folder; Vercel reads from here via .vercel link
+  • .vercel/ folder = connection to your Vercel project (do not delete)
+
+
+DOMAIN & DNS
+------------
+  Domain: forgevirtualtraining.org (Squarespace)
+  DNS should point to Vercel only (not Netlify).
+  Vercel dashboard → Project → Settings → Domains
+
+
+WHEN YOU ADD YOUR PHOTO
+-----------------------
+  1. Save image as: assets/images/ethan.jpg
+  2. In index.html, find the About section <img> tag
+  3. Change src to: assets/images/ethan.jpg
+  4. Deploy again (step 4 above)
+
+
+CONTACT FORM EMAIL SETUP (one-time)
+-----------------------------------
+  The form uses Vercel serverless: api/contact.js
+  Emails are sent through Resend (free tier).
+
+  1. Sign up at https://resend.com
+  2. Create an API key (Resend dashboard → API Keys)
+  3. In Vercel: Project → Settings → Environment Variables
+     Add these for Production (and Preview if you want):
+
+     RESEND_API_KEY     = your Resend API key
+     NOTIFY_EMAIL       = ethanflem1@gmail.com
+     FROM_EMAIL         = Forge Coaching <onboarding@resend.dev>
+
+     (Later, after verifying your domain in Resend, change FROM_EMAIL to:
+      Forge Coaching <hello@forgevirtualtraining.org>)
+
+  4. Redeploy the site after adding env vars
+  5. Test the form — you should get a lead email AND the client gets a confirmation email

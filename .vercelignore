@@ -1,0 +1,5 @@
+.env
+.env.*
+.git
+.DS_Store
+EDITING.txt
