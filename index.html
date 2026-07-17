@@ -362,27 +362,26 @@
       </div>
     </section>
 
-    <!-- 8. Final CTA + Contact -->
+    <!-- 8. Final CTA + Intake Form -->
     <section class="final-cta" id="apply">
       <div class="container final-cta-inner reveal">
         <span class="section-tag">Next step</span>
         <h2>Ready to train with a real plan?</h2>
         <p>
-          Apply for the 12-Week Forge Program. If it’s a fit, we start building your block.
-          If it isn’t, you’ll hear that too — no spam sequence, no pressure.
+          Fill out the short intake form below. I’ll review your answers and follow up within 24 hours.
         </p>
-        <a href="#contact" class="btn btn-primary">Apply now — $349 for 12 weeks</a>
+        <a href="#contact" class="btn btn-primary">Start client intake</a>
       </div>
     </section>
 
     <section class="section contact" id="contact">
       <div class="container contact-grid">
         <div class="contact-info reveal">
-          <span class="section-tag">Apply</span>
-          <h2>Start your application</h2>
+          <span class="section-tag">Client intake</span>
+          <h2>Quick background form</h2>
           <p>
-            Fill this out and I’ll respond within 24 hours to schedule a short intro call.
-            Be specific about your training history and goals — it helps me coach you better.
+            Nine short questions so I can coach you properly. Takes about two minutes.
+            Every answer is emailed to me when you submit.
           </p>
           <ul class="contact-details">
             <li>
@@ -408,60 +407,82 @@
             </li>
           </ul>
         </div>
-        <form class="contact-form reveal" id="contactForm">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="firstName">First Name</label>
-              <input type="text" id="firstName" name="firstName" required placeholder="Alex">
-            </div>
-            <div class="form-group">
-              <label for="lastName">Last Name</label>
-              <input type="text" id="lastName" name="lastName" required placeholder="Rivera">
-            </div>
-          </div>
+
+        <form class="contact-form intake-form reveal" id="contactForm" novalidate>
+          <input type="hidden" name="source" id="source" value="12-Week Program — $349">
+
           <div class="form-group">
-            <label for="email">Email</label>
-            <input type="email" id="email" name="email" required placeholder="you@email.com">
+            <label for="fullName">1. Full Name</label>
+            <input type="text" id="fullName" name="fullName" required autocomplete="name" placeholder="Your full name">
           </div>
+
           <div class="form-group">
-            <label for="phone">Phone (optional)</label>
-            <input type="tel" id="phone" name="phone" placeholder="(469) 400-8783">
+            <label for="email">2. Email Address</label>
+            <input type="email" id="email" name="email" required autocomplete="email" placeholder="you@email.com">
           </div>
+
           <div class="form-group">
-            <label for="goal">Primary Goal</label>
+            <label for="age">3. Age</label>
+            <input type="number" id="age" name="age" required min="13" max="99" inputmode="numeric" placeholder="e.g. 22">
+          </div>
+
+          <div class="form-group">
+            <label for="goal">4. What is your main goal right now?</label>
             <select id="goal" name="goal" required>
-              <option value="">Select your goal</option>
-              <option value="hypertrophy">Build muscle / fill out</option>
-              <option value="strength">Get stronger (SBD or general)</option>
-              <option value="recomp">Recomp / clean up while lifting</option>
-              <option value="break-plateau">Break a plateau</option>
-              <option value="other">Other</option>
+              <option value="">Select one</option>
+              <option value="Build muscle">Build muscle</option>
+              <option value="Lose fat">Lose fat</option>
+              <option value="Body recomp">Body recomp</option>
+              <option value="Get stronger">Get stronger</option>
+              <option value="Other">Other</option>
             </select>
           </div>
+
           <div class="form-group">
-            <label for="status">Training status</label>
-            <select id="status" name="status">
-              <option value="">Optional — helps me program honestly</option>
-              <option value="natural">Natural</option>
-              <option value="peptides">Peptides</option>
-              <option value="enhanced">Enhanced</option>
-              <option value="prefer-not">Prefer not to say</option>
+            <label for="trainingYears">5. How long have you been training consistently?</label>
+            <input type="text" id="trainingYears" name="trainingYears" required placeholder="e.g. 2 years, or 6 months">
+          </div>
+
+          <div class="form-group">
+            <label for="daysPerWeek">6. How many days per week can you realistically train?</label>
+            <select id="daysPerWeek" name="daysPerWeek" required>
+              <option value="">Select days</option>
+              <option value="2">2 days</option>
+              <option value="3">3 days</option>
+              <option value="4">4 days</option>
+              <option value="5">5 days</option>
+              <option value="6">6 days</option>
+              <option value="7">7 days</option>
             </select>
           </div>
+
           <div class="form-group">
-            <label for="plan">Interested in</label>
-            <select id="plan" name="plan">
-              <option value="12-Week Program — $349" selected>12-Week Program — $349 total</option>
-              <option value="Ongoing Coaching — $179/mo">Ongoing Coaching — $179/mo (after 12 weeks)</option>
-              <option value="">Not sure yet</option>
+            <label for="equipment">7. Do you train at a gym, at home, or both? (List main equipment you have access to)</label>
+            <textarea id="equipment" name="equipment" rows="3" required placeholder="e.g. Commercial gym — full racks, dumbbells, cables. Or: home — barbell, rack, bench, dumbbells up to 80s"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="injuries">8. Do you have any current injuries or physical limitations I should know about?</label>
+            <textarea id="injuries" name="injuries" rows="3" required placeholder="List anything that affects training, or write None"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="status">9. Are you currently natural, using peptides, or enhanced?</label>
+            <select id="status" name="status" required>
+              <option value="">Select one</option>
+              <option value="Natural">Natural</option>
+              <option value="Using peptides">Using peptides</option>
+              <option value="Enhanced">Enhanced</option>
             </select>
+            <p class="field-hint">This is only for programming context — I do not prescribe or source anything.</p>
           </div>
-          <div class="form-group">
-            <label for="message">Training background &amp; goals</label>
-            <textarea id="message" name="message" rows="4" placeholder="Years lifting, current split, equipment, days you can train, injuries, and what you want out of 12 weeks..."></textarea>
-          </div>
-          <button type="submit" class="btn btn-primary btn-full">Submit application</button>
-          <p class="form-note">No spam. Your info stays between us.</p>
+
+          <p class="form-disclaimer">
+            By submitting this form, you agree that this information is for coaching purposes only and is not medical advice.
+          </p>
+
+          <button type="submit" class="btn btn-primary btn-full">Submit intake form</button>
+          <p class="form-note">I’ll email you back within 24 hours. Your info stays private.</p>
         </form>
       </div>
     </section>

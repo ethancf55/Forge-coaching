@@ -1074,6 +1074,38 @@ h3 { font-size: 1.25rem; }
   margin-top: 1rem;
 }
 
+.field-hint {
+  margin-top: 0.45rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.form-disclaimer {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  padding: 0.9rem 1rem;
+  margin: 0.25rem 0 1.25rem;
+  background: rgba(249, 115, 22, 0.06);
+  border: 1px solid rgba(249, 115, 22, 0.2);
+  border-radius: var(--radius);
+}
+
+.intake-form .form-group label {
+  line-height: 1.4;
+}
+
+.intake-form input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.intake-form input[type="number"]::-webkit-outer-spin-button,
+.intake-form input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 /* Footer */
 .footer {
   border-top: 1px solid var(--border);

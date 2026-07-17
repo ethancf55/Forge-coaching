@@ -1,29 +1,13 @@
-const GOAL_LABELS = {
-  hypertrophy: 'Build muscle / fill out',
-  strength: 'Get stronger (SBD or general)',
-  recomp: 'Recomp / clean up while lifting',
-  'break-plateau': 'Break a plateau',
-  other: 'Other',
-  // legacy form values
-  'fat-loss': 'Fat Loss',
-  muscle: 'Build Muscle',
-  general: 'General Fitness',
-  'active-aging': 'Active Aging',
-};
-
-const STATUS_LABELS = {
-  natural: 'Natural',
-  peptides: 'Peptides',
-  enhanced: 'Enhanced',
-  'prefer-not': 'Prefer not to say',
-};
-
 function escapeHtml(value) {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+function nl2br(value) {
+  return escapeHtml(value).replace(/\n/g, '<br>');
 }
 
 async function sendEmail(apiKey, payload) {
@@ -58,69 +42,90 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'Email service is not configured yet.' });
   }
 
-  const { firstName, lastName, email, phone, goal, plan, message, status } = req.body || {};
+  const body = req.body || {};
 
-  if (!firstName?.trim() || !lastName?.trim() || !email?.trim() || !goal?.trim()) {
+  // Support new intake fields + older form field names
+  const fullName = (body.fullName || [body.firstName, body.lastName].filter(Boolean).join(' ')).trim();
+  const email = String(body.email || '').trim();
+  const age = String(body.age || '').trim();
+  const goal = String(body.goal || '').trim();
+  const trainingYears = String(body.trainingYears || '').trim();
+  const daysPerWeek = String(body.daysPerWeek || '').trim();
+  const equipment = String(body.equipment || body.message || '').trim();
+  const injuries = String(body.injuries || '').trim();
+  const status = String(body.status || '').trim();
+  const source = String(body.source || body.plan || 'Website intake form').trim();
+
+  if (!fullName || !email || !age || !goal || !trainingYears || !daysPerWeek || !equipment || !injuries || !status) {
     return res.status(400).json({ error: 'Please fill in all required fields.' });
   }
 
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailPattern.test(email.trim())) {
+  if (!emailPattern.test(email)) {
     return res.status(400).json({ error: 'Please enter a valid email address.' });
   }
 
-  const goalLabel = GOAL_LABELS[goal] || goal;
-  const statusLabel = STATUS_LABELS[status] || status || 'Not specified';
-  const clientEmail = email.trim();
-  const first = firstName.trim();
-  const fullName = `${first} ${lastName.trim()}`;
-  const safeName = escapeHtml(fullName);
-  const safeFirst = escapeHtml(first);
-  const safeEmail = escapeHtml(clientEmail);
-  const safePhone = escapeHtml(phone?.trim() || 'Not provided');
-  const safePlan = escapeHtml(plan?.trim() || 'Not sure yet');
-  const safeGoal = escapeHtml(goalLabel);
-  const safeStatus = escapeHtml(statusLabel);
-  const safeMessage = escapeHtml(message?.trim() || 'No additional message');
+  const ageNum = Number(age);
+  if (!Number.isFinite(ageNum) || ageNum < 13 || ageNum > 99) {
+    return res.status(400).json({ error: 'Please enter a valid age.' });
+  }
+
+  const first = fullName.split(/\s+/)[0] || fullName;
+  const safe = {
+    fullName: escapeHtml(fullName),
+    first: escapeHtml(first),
+    email: escapeHtml(email),
+    age: escapeHtml(age),
+    goal: escapeHtml(goal),
+    trainingYears: escapeHtml(trainingYears),
+    daysPerWeek: escapeHtml(daysPerWeek),
+    equipment: nl2br(equipment),
+    injuries: nl2br(injuries),
+    status: escapeHtml(status),
+    source: escapeHtml(source),
+  };
 
   const notifyHtml = `
-    <h2>New Forge Coaching application</h2>
-    <p><strong>Name:</strong> ${safeName}</p>
-    <p><strong>Email:</strong> <a href="mailto:${safeEmail}">${safeEmail}</a></p>
-    <p><strong>Phone:</strong> ${safePhone}</p>
-    <p><strong>Primary goal:</strong> ${safeGoal}</p>
-    <p><strong>Training status:</strong> ${safeStatus}</p>
-    <p><strong>Interested plan:</strong> ${safePlan}</p>
-    <p><strong>Message:</strong></p>
-    <p>${safeMessage.replace(/\n/g, '<br>')}</p>
-    <hr>
-    <p><em>Submitted from forgevirtualtraining.org</em></p>
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #111; line-height: 1.55; max-width: 640px;">
+      <p style="color: #f97316; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; font-size: 12px; margin: 0 0 8px;">Forge Coaching</p>
+      <h2 style="margin: 0 0 16px;">New client intake submission</h2>
+      <p style="margin: 0 0 16px; color: #555;">Someone submitted the intake form on forgevirtualtraining.org</p>
+      <table style="width: 100%; border-collapse: collapse; font-size: 15px;">
+        <tr><td style="padding: 10px 0; border-bottom: 1px solid #eee; width: 42%; color: #666;"><strong>1. Full Name</strong></td><td style="padding: 10px 0; border-bottom: 1px solid #eee;">${safe.fullName}</td></tr>
+        <tr><td style="padding: 10px 0; border-bottom: 1px solid #eee; color: #666;"><strong>2. Email</strong></td><td style="padding: 10px 0; border-bottom: 1px solid #eee;"><a href="mailto:${safe.email}">${safe.email}</a></td></tr>
+        <tr><td style="padding: 10px 0; border-bottom: 1px solid #eee; color: #666;"><strong>3. Age</strong></td><td style="padding: 10px 0; border-bottom: 1px solid #eee;">${safe.age}</td></tr>
+        <tr><td style="padding: 10px 0; border-bottom: 1px solid #eee; color: #666;"><strong>4. Main goal</strong></td><td style="padding: 10px 0; border-bottom: 1px solid #eee;">${safe.goal}</td></tr>
+        <tr><td style="padding: 10px 0; border-bottom: 1px solid #eee; color: #666;"><strong>5. Training history</strong></td><td style="padding: 10px 0; border-bottom: 1px solid #eee;">${safe.trainingYears}</td></tr>
+        <tr><td style="padding: 10px 0; border-bottom: 1px solid #eee; color: #666;"><strong>6. Days / week</strong></td><td style="padding: 10px 0; border-bottom: 1px solid #eee;">${safe.daysPerWeek}</td></tr>
+        <tr><td style="padding: 10px 0; border-bottom: 1px solid #eee; color: #666; vertical-align: top;"><strong>7. Gym / equipment</strong></td><td style="padding: 10px 0; border-bottom: 1px solid #eee;">${safe.equipment}</td></tr>
+        <tr><td style="padding: 10px 0; border-bottom: 1px solid #eee; color: #666; vertical-align: top;"><strong>8. Injuries / limits</strong></td><td style="padding: 10px 0; border-bottom: 1px solid #eee;">${safe.injuries}</td></tr>
+        <tr><td style="padding: 10px 0; border-bottom: 1px solid #eee; color: #666;"><strong>9. Natural / peptides / enhanced</strong></td><td style="padding: 10px 0; border-bottom: 1px solid #eee;">${safe.status}</td></tr>
+        <tr><td style="padding: 10px 0; color: #666;"><strong>Source / interest</strong></td><td style="padding: 10px 0;">${safe.source}</td></tr>
+      </table>
+      <p style="margin: 20px 0 0; color: #888; font-size: 13px;">Reply directly to this email to respond to the client.</p>
+    </div>
   `;
 
   const confirmationHtml = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1a1a1a; line-height: 1.6; max-width: 560px;">
       <p style="color: #f97316; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; font-size: 12px; margin: 0 0 8px;">Forge Coaching</p>
-      <h1 style="font-size: 24px; margin: 0 0 16px;">Application received</h1>
-      <p>Hi ${safeFirst},</p>
-      <p>Thanks for applying to the <strong>12-Week Forge Program</strong>. I've got your info and will reach out within <strong>24 hours</strong> to schedule a short intro call.</p>
-      <p><strong>Here's what you submitted:</strong></p>
+      <h1 style="font-size: 22px; margin: 0 0 16px;">Intake received</h1>
+      <p>Hi ${safe.first},</p>
+      <p>Thanks for submitting your client intake form. I’ve got your answers and will review them, then follow up within <strong>24 hours</strong>.</p>
+      <p><strong>What you sent:</strong></p>
       <ul>
-        <li><strong>Goal:</strong> ${safeGoal}</li>
-        <li><strong>Plan interest:</strong> ${safePlan}</li>
-      </ul>
-      <p><strong>What to expect on the call:</strong></p>
-      <ul>
-        <li>We'll talk about your goals, training age, and schedule</li>
-        <li>We'll cover equipment and how you currently train</li>
-        <li>I'll answer your questions — no pressure, just clarity</li>
+        <li><strong>Goal:</strong> ${safe.goal}</li>
+        <li><strong>Training days:</strong> ${safe.daysPerWeek}/week</li>
+        <li><strong>Age:</strong> ${safe.age}</li>
       </ul>
       <p>If you need to reach me sooner:</p>
       <ul>
         <li>Email: <a href="mailto:ethanflem1@gmail.com">ethanflem1@gmail.com</a></li>
         <li>Phone / text: <a href="tel:+14694008783">(469) 400-8783</a></li>
-        <li>Instagram: <a href="https://instagram.com/85ethan_">@85ethan_</a></li>
+        <li>Instagram: <a href="https://instagram.com/85ethan_ol">@85ethan_ol</a></li>
       </ul>
       <p>Talk soon,<br><strong>Ethan Fleming</strong><br>Forge Coaching<br><a href="https://forgevirtualtraining.org">forgevirtualtraining.org</a></p>
+      <p style="color: #888; font-size: 12px; margin-top: 24px;">This information is for coaching purposes only and is not medical advice.</p>
     </div>
   `;
 
@@ -128,17 +133,17 @@ module.exports = async function handler(req, res) {
     await sendEmail(apiKey, {
       from: fromEmail,
       to: [notifyEmail],
-      reply_to: clientEmail,
-      subject: `New consult: ${fullName}`,
+      reply_to: email,
+      subject: `New intake: ${fullName} · ${goal} · age ${age}`,
       html: notifyHtml,
     });
 
     try {
       await sendEmail(apiKey, {
         from: fromEmail,
-        to: [clientEmail],
+        to: [email],
         reply_to: notifyEmail,
-        subject: 'Your Forge Coaching consultation request',
+        subject: 'Forge Coaching — intake received',
         html: confirmationHtml,
       });
     } catch (confirmError) {
@@ -148,6 +153,8 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ success: true });
   } catch (error) {
     console.error('Contact form error:', error.message);
-    return res.status(500).json({ error: 'Failed to send your request. Please email ethanflem1@gmail.com directly.' });
+    return res.status(500).json({
+      error: 'Failed to send your form. Please email ethanflem1@gmail.com directly.',
+    });
   }
 };
