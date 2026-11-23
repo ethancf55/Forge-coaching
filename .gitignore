@@ -6,3 +6,5 @@
 .DS_Store
 *.zip
 node_modules/package-lock.json
+.env*
+node_modules/

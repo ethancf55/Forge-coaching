@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0b0c" />
+  <meta name="description" content="Forge Desk — local chat and multi-agent coding studio." />
+  <title>Forge Desk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0b0b0c;
+      --sidebar: #141416;
+      --surface: #1b1b1e;
+      --surface-2: #212124;
+      --hover: #26262a;
+      --line: rgba(255,255,255,0.07);
+      --line-strong: rgba(255,255,255,0.12);
+      --text: #ececee;
+      --muted: #9b9ba3;
+      --faint: #6d6d76;
+      --accent: #6d8cff;
+      --accent-2: #4d6ef5;
+      --accent-soft: rgba(109,140,255,0.14);
+      --user: #2a2a30;
+      --ok: #34d399;
+      --bad: #fb7185;
+      --warn: #f5c16c;
+      --safe-t: env(safe-area-inset-top, 0px);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, textarea { font: inherit; color: inherit; }
+
+    .scrim {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 15;
+    }
+    .scrim.on { display: block; }
+
+    .sidebar {
+      width: 300px;
+      flex-shrink: 0;
+      background: var(--sidebar);
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      padding: calc(0.9rem + var(--safe-t)) 0.8rem 0.85rem;
+      z-index: 20;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      padding: 0.15rem 0.45rem 1rem;
+    }
+    .mark {
+      width: 30px; height: 30px;
+      border-radius: 9px;
+      background: linear-gradient(160deg, #8aa8ff 0%, #4d6ef5 70%);
+      display: grid; place-items: center;
+      font-weight: 700; font-size: 0.88rem; color: #fff;
+      box-shadow: 0 6px 16px rgba(77,110,245,0.28);
+    }
+    .brand h1 { font-size: 0.96rem; font-weight: 650; letter-spacing: -0.03em; }
+    .brand p { font-size: 0.7rem; color: var(--faint); margin-top: 0.08rem; }
+
+    .new-chat {
+      width: 100%;
+      display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+      border: 1px solid var(--line-strong);
+      background: transparent;
+      color: var(--text);
+      border-radius: 12px;
+      padding: 0.78rem 0.85rem;
+      font-size: 1.02rem; font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 0.95rem;
+    }
+    .new-chat:hover { background: var(--hover); }
+
+    .seg {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3px;
+      background: var(--bg);
+      padding: 3px;
+      border-radius: 11px;
+      margin-bottom: 1rem;
+    }
+    .seg button {
+      border: 0; background: transparent; color: var(--muted);
+      font-size: 0.95rem; font-weight: 600;
+      padding: 0.62rem 0.4rem; border-radius: 8px; cursor: pointer;
+    }
+    .seg button.on {
+      background: var(--surface-2);
+      color: var(--text);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.04);
+    }
+
+    .nav-label {
+      font-size: 0.75rem; font-weight: 650; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--faint);
+      padding: 0.25rem 0.55rem 0.5rem;
+    }
+    .roles { flex: 1; overflow: auto; display: flex; flex-direction: column; gap: 4px; }
+    .role {
+      width: 100%; text-align: left;
+      border: 0; background: transparent; color: var(--muted);
+      padding: 0.78rem 0.75rem; border-radius: 12px;
+      cursor: pointer; display: flex; align-items: center; gap: 0.7rem;
+    }
+    .role:hover { background: var(--hover); color: var(--text); }
+    .role.on { background: var(--accent-soft); color: var(--text); }
+    .role:disabled { opacity: 0.38; cursor: not-allowed; }
+    .role .meta { flex: 1; min-width: 0; }
+    .role .name { display: block; font-size: 1.05rem; font-weight: 600; text-transform: capitalize; }
+    .role .desc { display: block; font-size: 0.86rem; color: var(--faint); margin-top: 0.12rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ok); flex-shrink: 0; }
+    .dot.off { background: #4a4a52; }
+
+    .side-foot {
+      font-size: 0.72rem; color: var(--faint);
+      padding: 0.8rem 0.45rem 0.15rem;
+      border-top: 1px solid var(--line);
+      margin-top: 0.7rem;
+      display: flex; align-items: center; gap: 0.45rem;
+    }
+    .live { width: 6px; height: 6px; border-radius: 50%; background: #555; }
+    .live.on { background: var(--ok); box-shadow: 0 0 0 3px rgba(52,211,153,0.12); }
+
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--bg); }
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: calc(0.7rem + var(--safe-t)) 1.15rem 0.7rem;
+      border-bottom: 1px solid transparent;
+    }
+    .top-left { display: flex; align-items: center; gap: 0.55rem; min-width: 0; }
+    .menu-btn {
+      display: none;
+      width: 34px; height: 34px; border-radius: 8px;
+      border: 1px solid var(--line); background: transparent;
+      color: var(--text); cursor: pointer;
+    }
+    .topbar h2 { font-size: 0.94rem; font-weight: 600; letter-spacing: -0.02em; }
+    .topbar h2 span { color: var(--faint); font-weight: 500; }
+    .pill {
+      font-size: 0.72rem; color: var(--muted);
+      padding: 0.28rem 0.65rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--surface);
+    }
+    .pill.busy { color: var(--warn); border-color: rgba(245,193,108,0.3); }
+
+    #log {
+      flex: 1; overflow: auto;
+      padding: 0.4rem 1.15rem 0.4rem;
+    }
+    .banner {
+      display: none; max-width: 720px; margin: 0 auto 1rem;
+      background: rgba(245,193,108,0.08);
+      border: 1px solid rgba(245,193,108,0.22);
+      color: #ead7a4; border-radius: 12px;
+      padding: 0.7rem 0.85rem; font-size: 0.82rem; line-height: 1.45;
+    }
+    .banner.show { display: block; }
+    .banner code {
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-size: 0.74rem;
+      background: rgba(0,0,0,0.25);
+      padding: 0.08rem 0.3rem; border-radius: 5px;
+    }
+
+    .empty {
+      max-width: 38rem; margin: 11vh auto 0; text-align: center; color: var(--muted);
+    }
+    .empty .mark {
+      margin: 0 auto 1.1rem;
+      width: 42px; height: 42px; font-size: 1.05rem; border-radius: 12px;
+    }
+    .empty h3 {
+      color: var(--text); font-size: 1.55rem; font-weight: 650;
+      letter-spacing: -0.035em; margin-bottom: 0.45rem;
+    }
+    .empty p { font-size: 0.92rem; line-height: 1.55; max-width: 30rem; margin: 0 auto; }
+    .chips {
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 0.45rem;
+      margin-top: 1.35rem;
+    }
+    .chip {
+      border: 1px solid var(--line-strong);
+      background: var(--surface);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 0.48rem 0.8rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .chip:hover { background: var(--hover); color: var(--text); }
+
+    .row { max-width: 720px; margin: 0 auto 1.2rem; display: flex; gap: 0.8rem; }
+    .row.me { flex-direction: row-reverse; }
+    .avatar {
+      width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+      display: grid; place-items: center; font-size: 0.68rem; font-weight: 700;
+      background: var(--surface); color: var(--muted);
+    }
+    .row.me .avatar { background: var(--accent-2); color: #fff; }
+    .bubble {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 0.9rem 1.05rem;
+      line-height: 1.65; font-size: 1.125rem;
+      white-space: pre-wrap; word-break: break-word;
+      max-width: 100%;
+    }
+    .row.me .bubble { background: var(--user); border-color: transparent; }
+    .row.wrapup .bubble {
+      border-color: rgba(109,140,255,0.28);
+      background: linear-gradient(180deg, rgba(109,140,255,0.08), var(--surface));
+    }
+    .row.wrapup .avatar { background: var(--accent-2); color: #fff; }
+
+    .stage { max-width: 720px; margin: 0 auto 0.7rem; }
+    .stage header {
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--accent); margin: 0 0 0.28rem 0.15rem;
+    }
+    .stage.pass header { color: var(--ok); }
+    .stage.fail header { color: var(--bad); }
+    .stage .bubble { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.98rem; line-height: 1.6; }
+
+    .composer-wrap { padding: 0.45rem 1.15rem calc(0.95rem + var(--safe-b)); }
+    .composer {
+      max-width: 720px; margin: 0 auto;
+      background: var(--surface);
+      border: 1px solid var(--line-strong);
+      border-radius: 22px;
+      padding: 0.5rem 0.5rem 0.5rem 1rem;
+      display: flex; gap: 0.45rem; align-items: flex-end;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.22);
+    }
+    textarea {
+      flex: 1; resize: none; border: 0; outline: none;
+      background: transparent;
+      font-size: 1.1rem; line-height: 1.5;
+      max-height: 8.5rem; min-height: 1.5rem;
+      padding: 0.38rem 0;
+    }
+    #send {
+      border: 0; width: 34px; height: 34px; border-radius: 50%;
+      background: var(--text); color: #111;
+      cursor: pointer; font-weight: 700; font-size: 1rem;
+      display: grid; place-items: center; flex-shrink: 0;
+    }
+    #send:disabled { opacity: 0.28; cursor: wait; }
+    .hint {
+      max-width: 720px; margin: 0.45rem auto 0;
+      font-size: 0.68rem; color: var(--faint); text-align: center;
+    }
+
+    @media (max-width: 760px) {
+      .sidebar {
+        display: none;
+        position: fixed; inset: 0 auto 0 0;
+        width: min(88vw, 320px);
+      }
+      .sidebar.open { display: flex; }
+      .menu-btn { display: grid; place-items: center; }
+      .empty { margin-top: 7vh; }
+    }
+  </style>
+</head>
+<body>
+  <div class="scrim" id="scrim"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="mark">F</div>
+      <div>
+        <h1>Forge Desk</h1>
+        <p>Local multi-agent studio</p>
+      </div>
+    </div>
+    <button type="button" class="new-chat" id="new-chat">+ New conversation</button>
+    <div class="seg">
+      <button type="button" id="mode-chat" class="on">Chat</button>
+      <button type="button" id="mode-agent">Agents</button>
+    </div>
+    <div class="nav-label" id="roles-label">Specialists</div>
+    <div class="roles" id="roles"></div>
+    <div class="side-foot">
+      <span class="live" id="live"></span>
+      <span id="conn">Checking runtime…</span>
+    </div>
+  </aside>
+
+  <section class="main">
+    <div class="topbar">
+      <div class="top-left">
+        <button type="button" class="menu-btn" id="menu" aria-label="Open menu">☰</button>
+        <h2 id="title">Chat <span id="subtitle">· General</span></h2>
+      </div>
+      <div class="pill" id="status">Ready</div>
+    </div>
+    <div id="log">
+      <div class="banner" id="banner"></div>
+      <div class="empty" id="empty">
+        <div class="mark">F</div>
+        <h3>How can I help?</h3>
+        <p>Chat with the 3B assistant, or switch to Agents. After a build, the 3B model tells you what it made and exactly how to open it.</p>
+        <div class="chips">
+          <button type="button" class="chip" data-fill="Explain this like I’m new to coding.">Explain something</button>
+          <button type="button" class="chip" data-fill="Write a Python function that calculates BMI from height and weight.">Write a function</button>
+          <button type="button" class="chip" data-mode="agent" data-fill="Build a Python CLI that converts Celsius to Fahrenheit and includes unit tests.">Run the agent team</button>
+        </div>
+      </div>
+    </div>
+    <div class="composer-wrap">
+      <div class="composer">
+        <textarea id="input" rows="1" placeholder="Message Forge Desk…"></textarea>
+        <button type="button" id="send" aria-label="Send">↑</button>
+      </div>
+      <div class="hint">Enter to send · Shift+Enter for a new line · Free while the owner’s Mac is online</div>
+    </div>
+  </section>
+
+  <script>
+    const LOCAL = "http://127.0.0.1:7860";
+    const GIST_ID = "5713db3869010e881bbf9ddde7f61aa1";
+    const DESCS = {
+      planner: "Steps only, no code",
+      coder: "Writes the implementation",
+      reviewer: "Finds issues and corrects",
+      tester: "Writes unit tests",
+      fixer: "Patches failing code",
+      general: "Everyday assistant (1.5B)",
+      "general-1.5b": "Everyday assistant (1.5B)",
+      "general-3b": "Explains what was built",
+    };
+    const LABELS = {
+      planner: "Planner",
+      coder: "Coder",
+      reviewer: "Reviewer",
+      tester: "Tester",
+      fixer: "Fixer",
+      general: "General 1.5B",
+      "general-1.5b": "General 1.5B",
+      "general-3b": "General 3B",
+    };
+    const PREFER = ["planner","coder","reviewer","tester","fixer","general-3b","general","general-1.5b"];
+
+    let API = "";
+    let mode = "chat";
+    let role = "general-3b";
+
+    const $ = (id) => document.getElementById(id);
+    const logEl = $("log");
+    const empty = $("empty");
+    const input = $("input");
+    const send = $("send");
+    const status = $("status");
+    const banner = $("banner");
+    const rolesEl = $("roles");
+    const sidebar = $("sidebar");
+    const scrim = $("scrim");
+
+    function setBusy(on, label) {
+      send.disabled = on;
+      status.textContent = on ? (label || "Working…") : "Ready";
+      status.classList.toggle("busy", on);
+    }
+
+    function closeMenu() {
+      sidebar.classList.remove("open");
+      scrim.classList.remove("on");
+    }
+
+    function updateTitle() {
+      if (mode === "agent") {
+        $("title").innerHTML = 'Agents <span id="subtitle">· Planner → Fixer</span>';
+        input.placeholder = "Describe a coding task for the agent team…";
+        $("roles-label").textContent = "Team";
+      } else {
+        $("title").innerHTML = 'Chat <span id="subtitle">· ' + (LABELS[role] || role) + "</span>";
+        input.placeholder = "Message " + (LABELS[role] || role) + "…";
+        $("roles-label").textContent = "Specialists";
+      }
+    }
+
+    function hideEmpty() { if (empty && empty.parentNode) empty.remove(); }
+
+    function addMsg(text, mine, kind) {
+      hideEmpty();
+      const row = document.createElement("div");
+      row.className = "row" + (mine ? " me" : "") + (kind === "wrapup" ? " wrapup" : "");
+      row.innerHTML = '<div class="avatar"></div><div class="bubble"></div>';
+      row.querySelector(".avatar").textContent = mine ? "Y" : "F";
+      row.querySelector(".bubble").textContent = text;
+      logEl.appendChild(row);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function addStages(sections) {
+      hideEmpty();
+      (sections || []).forEach((s) => {
+        const el = document.createElement("div");
+        const pass = s.passed;
+        el.className = "stage" + (pass === true ? " pass" : pass === false ? " fail" : "");
+        el.innerHTML = "<header></header><div class='bubble'></div>";
+        el.querySelector("header").textContent =
+          (s.name || "step") + (pass === true ? "  ·  pass" : pass === false ? "  ·  fail" : "");
+        el.querySelector(".bubble").textContent = s.text || "";
+        logEl.appendChild(el);
+      });
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function runtimeEndpoint() {
+      if (location.hostname.endsWith("forgevirtualtraining.org")) return "/api/desk-runtime";
+      return "https://forgevirtualtraining.org/api/desk-runtime";
+    }
+
+    async function lookupPublicUrl() {
+      const tries = [
+        runtimeEndpoint(),
+        "https://api.github.com/gists/" + GIST_ID,
+      ];
+      for (const url of tries) {
+        try {
+          const r = await fetch(url, { cache: "no-store" });
+          if (!r.ok) continue;
+          const data = await r.json();
+          if (data.url) return String(data.url).replace(/\/$/, "");
+          const file = (data.files && (data.files["forge-desk-runtime.json"] || data.files["runtime.json"])) || {};
+          const raw = file.content;
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed.url) return String(parsed.url).replace(/\/$/, "");
+          }
+        } catch (_) {}
+      }
+      return "";
+    }
+
+    async function healthOk(base) {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 5000);
+      try {
+        const r = await fetch(base + "/health", { signal: ctrl.signal, cache: "no-store" });
+        if (!r.ok) return false;
+        const data = await r.json();
+        return !!data.ok;
+      } catch (_) {
+        return false;
+      } finally {
+        clearTimeout(t);
+      }
+    }
+
+    async function detectApi() {
+      const candidates = [];
+      const host = location.hostname;
+      if (location.port === "7860" || host.endsWith("trycloudflare.com")) candidates.push("");
+      const published = await lookupPublicUrl();
+      if (published) candidates.push(published);
+      if (host === "127.0.0.1" || host === "localhost") candidates.push(LOCAL);
+      const seen = new Set();
+      for (const base of candidates) {
+        if (seen.has(base)) continue;
+        seen.add(base);
+        if (await healthOk(base)) { API = base; return true; }
+      }
+      API = published || "";
+      return false;
+    }
+
+    function setConnected(ok) {
+      $("conn").textContent = ok ? "Runtime connected" : "Runtime offline";
+      $("live").classList.toggle("on", ok);
+      if (ok) {
+        banner.classList.remove("show");
+        banner.textContent = "";
+        if (!status.classList.contains("busy")) send.disabled = false;
+        return;
+      }
+      banner.classList.add("show");
+      const owner = location.port === "7860" || location.hostname === "127.0.0.1" || location.hostname === "localhost";
+      banner.innerHTML = owner
+        ? "Start the public runtime on this Mac: <code>~/Projects/local-agents/start-public.sh</code>"
+        : "Forge Desk is offline right now. The owner needs to start the Mac runtime. You can leave this page open — it will reconnect automatically.";
+      if (!status.classList.contains("busy")) send.disabled = true;
+    }
+
+    async function loadRoles() {
+      const r = await fetch(API + "/roles");
+      const data = await r.json();
+      rolesEl.innerHTML = "";
+      const items = (data.roles || []).slice();
+      items.sort((a, b) => PREFER.indexOf(a.name) - PREFER.indexOf(b.name));
+      items.forEach((item) => {
+        if (!PREFER.includes(item.name)) return;
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "role" + (item.name === role ? " on" : "");
+        b.disabled = !item.ready;
+        b.innerHTML =
+          '<span class="meta"><span class="name"></span><span class="desc"></span></span>' +
+          '<span class="dot ' + (item.ready ? "" : "off") + '"></span>';
+        b.querySelector(".name").textContent = LABELS[item.name] || item.name;
+        b.querySelector(".desc").textContent = DESCS[item.name] || "";
+        b.addEventListener("click", () => {
+          role = item.name;
+          [...rolesEl.children].forEach((c) => c.classList.remove("on"));
+          b.classList.add("on");
+          if (mode !== "chat") {
+            mode = "chat";
+            $("mode-chat").classList.add("on");
+            $("mode-agent").classList.remove("on");
+          }
+          updateTitle();
+          closeMenu();
+        });
+        rolesEl.appendChild(b);
+      });
+    }
+
+    function setMode(next) {
+      mode = next;
+      $("mode-chat").classList.toggle("on", next === "chat");
+      $("mode-agent").classList.toggle("on", next === "agent");
+      updateTitle();
+    }
+
+    $("mode-chat").onclick = () => setMode("chat");
+    $("mode-agent").onclick = () => setMode("agent");
+    $("menu").onclick = () => {
+      sidebar.classList.add("open");
+      scrim.classList.add("on");
+    };
+    scrim.onclick = closeMenu;
+    $("new-chat").onclick = () => {
+      [...logEl.querySelectorAll(".row, .stage")].forEach((n) => n.remove());
+      if (!logEl.contains(empty)) {
+        const bannerNode = banner;
+        logEl.appendChild(empty);
+        if (bannerNode && bannerNode.classList.contains("show")) {
+          logEl.insertBefore(bannerNode, empty);
+        }
+      }
+      closeMenu();
+      input.focus();
+    };
+
+    document.querySelectorAll(".chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        if (chip.dataset.mode === "agent") setMode("agent");
+        input.value = chip.dataset.fill || "";
+        input.focus();
+        input.dispatchEvent(new Event("input"));
+      });
+    });
+
+    async function waitJob(jobId) {
+      const started = Date.now();
+      while (Date.now() - started < 12 * 60 * 1000) {
+        const r = await fetch(API + "/jobs/" + jobId, { cache: "no-store" });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.detail || JSON.stringify(data));
+        if (data.stage) setBusy(true, data.stage);
+        if (data.status === "done" || data.status === "error") return data;
+        await new Promise((ok) => setTimeout(ok, 1500));
+      }
+      throw new Error("That run took too long. Try again.");
+    }
+
+    async function go() {
+      const text = input.value.trim();
+      if (!text || send.disabled) return;
+      if (!API) {
+        addMsg("Runtime is offline. Try again when the owner’s Mac is connected.", false);
+        return;
+      }
+      input.value = "";
+      input.style.height = "auto";
+      addMsg(text, true);
+      setBusy(true, mode === "agent" ? "Agents running…" : "Thinking…");
+      try {
+        const r = await fetch(API + "/jobs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            kind: mode === "agent" ? "agent" : "chat",
+            message: text,
+            task: text,
+            role,
+          }),
+        });
+        const created = await r.json();
+        if (!r.ok) throw new Error(created.detail || JSON.stringify(created));
+        const data = created.status === "done" ? created : await waitJob(created.id);
+        if (data.status === "error") throw new Error(data.error || "Job failed");
+        if (mode === "agent") {
+          addStages(data.sections);
+          addMsg(data.reply || data.final || (data.ok ? "PASS" : "FAIL"), false, "wrapup");
+        } else {
+          addMsg(data.reply || "", false);
+        }
+      } catch (e) {
+        addMsg(String(e.message || e), false);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    send.onclick = go;
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); go(); }
+    });
+    input.addEventListener("input", () => {
+      input.style.height = "auto";
+      input.style.height = Math.min(input.scrollHeight, 136) + "px";
+    });
+
+    let rolesLoaded = false;
+    async function refreshConnection() {
+      let ok = false;
+      if (API) ok = await healthOk(API);
+      if (!ok) ok = await detectApi();
+      setConnected(ok);
+      if (ok && !rolesLoaded) {
+        try {
+          await loadRoles();
+          rolesLoaded = true;
+        } catch (_) {}
+      }
+      return ok;
+    }
+
+    (async () => {
+      updateTitle();
+      await refreshConnection();
+      setInterval(refreshConnection, 12000);
+    })();
+  </script>
+</body>
+</html>
